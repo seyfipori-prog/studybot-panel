@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>کتابخانه درسی</title>
+<link rel="stylesheet" href="./style.css">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="./config.js"></script>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div><div class="eyebrow">STUDYBOT</div><h1>📚 کتابخانه درسی</h1><p id="welcome">فایل‌های تأییدشده گروه</p></div>
+    <button id="refresh" class="ghost">به‌روزرسانی</button>
+  </header>
+  <div id="notice" class="notice hidden"></div>
+  <section class="search card">
+    <label for="q">جست‌وجوی عنوان، درس، پایه یا فصل</label>
+    <div class="searchrow"><input id="q" placeholder="مثلاً فیزیک دهم یا درس اول..." autocomplete="off"><button id="searchBtn">جست‌وجو</button></div>
+    <p class="hint">غلط‌های املایی رایج تا حدی پشتیبانی می‌شوند. هوش مصنوعی و OCR در این نسخه فعال نیستند.</p>
+  </section>
+  <section id="adminPanel" class="card hidden">
+    <h2>⚙️ مدیریت ادمین‌ها</h2>
+    <p class="hint">فقط ادمین اصلی می‌تواند ادمین اضافه یا حذف کند.</p>
+    <form id="addAdminForm" class="searchrow">
+      <input id="adminId" inputmode="numeric" placeholder="شناسه عددی تلگرام" required>
+      <button type="submit">افزودن</button>
+    </form>
+    <div id="adminsList"></div>
+  </section>
+  <section id="auditPanel" class="card hidden"><h2>🧾 تاریخچه مدیریت</h2><div id="auditList"></div></section>
+  <section class="results-head"><h2>فایل‌های کتابخانه</h2><span id="count">۰ فایل</span></section>
+  <main id="files" class="files"><div class="empty">برای دیدن فایل‌ها در حال اتصال هستیم…</div></main>
+  <footer>دسترسی فقط برای اعضای گروه مجاز • فایل‌های ردشده نمایش داده نمی‌شوند</footer>
+</div>
+<script src="./app.js"></script>
+</body>
+</html>
