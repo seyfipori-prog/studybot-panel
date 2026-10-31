@@ -1,2 +1,2 @@
-// آدرس Worker را بعد از Deploy جداگانه اینجا وارد کنید. مثال: https://studybot-api.<subdomain>.workers.dev
-window.STUDYBOT_API_BASE = "https://YOUR-WORKER.workers.dev";
+// آدرس Worker پروژه StudyBot
+window.STUDYBOT_API_BASE = "https://nemonetel.nutestis1.workers.dev";
