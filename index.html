@@ -1,40 +1,58 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="dark">
-<title>کتابخانه درسی</title>
-<link rel="stylesheet" href="./style.css">
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="./config.js"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090b18">
+<title>StudyBot | مرکز هوشمند مطالعه</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css"><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="./config.js"></script>
 </head>
 <body>
-<div class="shell">
-  <header>
-    <div><div class="eyebrow">STUDYBOT</div><h1>📚 کتابخانه درسی</h1><p id="welcome">فایل‌های تأییدشده گروه</p></div>
-    <button id="refresh" class="ghost">به‌روزرسانی</button>
-  </header>
+<div class="ambient a1"></div><div class="ambient a2"></div>
+<div class="app-shell">
+ <aside class="sidebar">
+  <div class="brand"><div class="brand-mark">S<span>✦</span></div><div><b>StudyBot</b><small>SMART STUDY SPACE</small></div></div>
+  <div class="profile"><div class="avatar" id="avatar">S</div><div><b id="profileName">در حال اتصال...</b><small id="profileRole">کاربر StudyBot</small></div><i class="online"></i></div>
+  <nav id="nav">
+   <button class="nav-item active" data-page="home"><span>⌂</span> نمای کلی</button>
+   <button class="nav-item" data-page="library"><span>▤</span> کتابخانه درسی</button>
+   <button class="nav-item" data-page="schedule"><span>▦</span> برنامه کلاس‌ها</button>
+   <button class="nav-item" data-page="exams"><span>◷</span> امتحانات</button>
+   <div class="nav-label">فضای شخصی</div>
+   <button class="nav-item" data-page="reminders"><span>♧</span> یادآورهای من</button>
+   <button class="nav-item" data-page="tasks"><span>☑</span> تکالیف</button>
+   <button class="nav-item" data-page="grades"><span>▥</span> دفتر نمرات</button>
+   <div class="nav-label admin-only hidden">مدیریت</div>
+   <button class="nav-item admin-only hidden" data-page="pending"><span>◉</span> تأیید فایل‌ها <em id="pendingBadge">0</em></button>
+   <button class="nav-item admin-only hidden" data-page="announce"><span>↗</span> اطلاعیه و پیام</button>
+   <button class="nav-item admin-only hidden" data-page="users"><span>♙</span> کاربران</button>
+   <button class="nav-item admin-only hidden" data-page="polls"><span>☷</span> نظرسنجی</button>
+   <button class="nav-item admin-only hidden" data-page="audit"><span>⌁</span> گزارش فعالیت</button>
+  </nav>
+  <div class="side-foot"><span class="pulse"></span> سرویس آماده دریافت درخواست <small>v4.0 · Asia/Tehran</small></div>
+ </aside>
+ <main class="main">
+  <header class="topbar"><div><div class="eyebrow">STUDY • ORGANIZE • ACHIEVE</div><h1 id="pageTitle">نمای کلی</h1><p id="pageSub">همه چیز برای یک مطالعه منظم، یک‌جا.</p></div><div class="top-actions"><span class="date-chip" id="today"></span><button class="icon-btn" id="refresh" title="به‌روزرسانی">⟳</button></div></header>
   <div id="notice" class="notice hidden"></div>
-  <section class="search card">
-    <label for="q">جست‌وجوی عنوان، درس، پایه یا فصل</label>
-    <div class="searchrow"><input id="q" placeholder="مثلاً فیزیک دهم یا درس اول..." autocomplete="off"><button id="searchBtn">جست‌وجو</button></div>
-    <p class="hint">غلط‌های املایی رایج تا حدی پشتیبانی می‌شوند. هوش مصنوعی و OCR در این نسخه فعال نیستند.</p>
+  <section id="page-home" class="page active">
+   <div class="hero"><div><span class="hero-tag">YOUR STUDY COMPANION</span><h2>هر قدم کوچک،<br><strong>یک پیشرفت بزرگ.</strong></h2><p>برنامه‌ات را مرتب کن، فایل‌ها را پیدا کن و برای امتحان‌ها آماده بمان.</p><button class="primary" data-go="schedule">مشاهده برنامه کلاس‌ها <b>←</b></button></div><div class="hero-orbit"><div class="orbit o1"></div><div class="orbit o2"></div><div class="orbit-core">✦<small>STUDY</small></div><span class="spark s1">✧</span><span class="spark s2">✦</span></div></div>
+   <div class="notify-strip"><div><b>🔔 اعلان‌های خصوصی</b><small id="notifyStatus">وضعیت اعلان‌ها در حال بررسی...</small></div><button class="small-btn" id="notifyToggle">در حال بررسی</button></div>
+   <div class="stats-grid"><article class="stat-card"><span class="stat-icon violet">▤</span><small>فایل‌های کتابخانه</small><b id="statFiles">—</b><i>محتوای تأییدشده</i></article><article class="stat-card"><span class="stat-icon cyan">◷</span><small>امتحانات ثبت‌شده</small><b id="statExams">—</b><i>تقویم امتحانات</i></article><article class="stat-card"><span class="stat-icon pink">☑</span><small>تکالیف باقی‌مانده</small><b id="statTasks">—</b><i>در فضای شخصی تو</i></article><article class="stat-card admin-only hidden"><span class="stat-icon orange">◉</span><small>فایل‌های در انتظار</small><b id="statPending">—</b><i>نیازمند بررسی ادمین</i></article></div>
+   <div class="two-col"><section class="panel"><div class="panel-head"><div><span class="eyebrow">UP NEXT</span><h3>امتحانات پیش‌رو</h3></div><button class="text-btn" data-go="exams">همه امتحانات ←</button></div><div id="homeExams" class="stack empty-state">در حال دریافت...</div></section><section class="panel"><div class="panel-head"><div><span class="eyebrow">QUICK ACCESS</span><h3>دسترسی سریع</h3></div></div><div class="quick-grid"><button data-go="library"><b>▤</b><span>کتابخانه</span><small>جست‌وجوی جزوه</small></button><button data-go="reminders"><b>♧</b><span>یادآور شخصی</span><small>قرارهای مهم</small></button><button data-go="tasks"><b>☑</b><span>تکالیف</span><small>پیگیری درس‌ها</small></button><button data-go="grades"><b>▥</b><span>دفتر نمرات</span><small>میانگین شخصی</small></button></div></section></div>
   </section>
-  <section id="adminPanel" class="card hidden">
-    <h2>⚙️ مدیریت ادمین‌ها</h2>
-    <p class="hint">فقط ادمین اصلی می‌تواند ادمین اضافه یا حذف کند.</p>
-    <form id="addAdminForm" class="searchrow">
-      <input id="adminId" inputmode="numeric" placeholder="شناسه عددی تلگرام" required>
-      <button type="submit">افزودن</button>
-    </form>
-    <div id="adminsList"></div>
-  </section>
-  <section id="auditPanel" class="card hidden"><h2>🧾 تاریخچه مدیریت</h2><div id="auditList"></div></section>
-  <section class="results-head"><h2>فایل‌های کتابخانه</h2><span id="count">۰ فایل</span></section>
-  <main id="files" class="files"><div class="empty">برای دیدن فایل‌ها در حال اتصال هستیم…</div></main>
-  <footer>دسترسی فقط برای اعضای گروه مجاز • فایل‌های ردشده نمایش داده نمی‌شوند</footer>
+  <section id="page-library" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">APPROVED MATERIALS</span><h3>کتابخانه درسی</h3></div><span class="soft-badge" id="fileCount">۰ فایل</span></div><div class="searchbar"><span>⌕</span><input id="searchFiles" placeholder="جست‌وجوی عنوان، درس، پایه یا فصل..."><button id="searchBtn">جست‌وجو</button></div><div id="libraryList" class="cards-list"><div class="empty-state">برای بارگذاری کتابخانه کمی صبر کن...</div></div></div></section>
+  <section id="page-schedule" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">WEEKLY TIMETABLE</span><h3>برنامه کلاس‌ها</h3></div><span class="soft-badge">هفتگی</span></div><div id="scheduleList" class="cards-list"></div><form id="scheduleForm" class="form-grid admin-only hidden"><h4>افزودن کلاس جدید</h4><select name="weekday"><option value="6">شنبه</option><option value="0">یکشنبه</option><option value="1">دوشنبه</option><option value="2">سه‌شنبه</option><option value="3">چهارشنبه</option><option value="4">پنجشنبه</option><option value="5">جمعه</option></select><input name="subject" placeholder="نام درس" required><input name="start_time" type="time" required><input name="end_time" type="time"><input name="teacher" placeholder="دبیر (اختیاری)"><input name="room" placeholder="کلاس (اختیاری)"><button class="primary" type="submit">افزودن به برنامه</button></form></div></section>
+  <section id="page-exams" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">EXAM CALENDAR</span><h3>تقویم امتحانات</h3></div></div><div id="examList" class="cards-list"></div><form id="examForm" class="form-grid admin-only hidden"><h4>ثبت امتحان جدید</h4><input name="title" placeholder="عنوان درس / امتحان" required><input name="exam_date" type="date" required><input name="exam_time" type="time"><input name="scope" placeholder="محدوده امتحان"><input name="description" placeholder="توضیحات"><button class="primary" type="submit">ثبت امتحان</button></form></div></section>
+  <section id="page-reminders" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">PERSONAL REMINDERS</span><h3>یادآورهای من</h3></div></div><form id="reminderForm" class="form-grid"><input name="title" placeholder="عنوان یادآور" required><input name="remind_at" type="datetime-local" required><input name="description" placeholder="توضیحات (اختیاری)"><button class="primary">ثبت یادآور</button></form><div id="reminderList" class="cards-list"></div></div></section>
+  <section id="page-tasks" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">MY TASKS</span><h3>مدیریت تکالیف</h3></div></div><form id="taskForm" class="form-grid"><input name="title" placeholder="مثلاً حل تمرین صفحه ۴۲" required><input name="due_at" type="date"><button class="primary">افزودن تکلیف</button></form><div id="taskList" class="cards-list"></div></div></section>
+  <section id="page-grades" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">PRIVATE GRADEBOOK</span><h3>دفتر نمرات من</h3></div><div class="average" id="gradeAverage">میانگین: —</div></div><form id="gradeForm" class="form-grid"><input name="subject" placeholder="نام درس" required><input name="score" type="number" min="0" step="0.25" placeholder="نمره" required><input name="out_of" type="number" min="1" value="20" placeholder="از چند؟"><input name="note" placeholder="توضیح (اختیاری)"><button class="primary">ثبت نمره</button></form><div id="gradeList" class="cards-list"></div></div></section>
+  <section id="page-pending" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">MODERATION QUEUE</span><h3>فایل‌های منتظر تأیید</h3></div><span class="soft-badge" id="pendingCount">۰ مورد</span></div><p class="muted">فایل‌ها تا زمان تأیید در کتابخانه عمومی دیده نمی‌شوند. نسخه اصلی فایل برای ادمین ارسال می‌شود.</p><div id="pendingList" class="cards-list"></div></div></section>
+  <section id="page-announce" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">BROADCAST CENTER</span><h3>ارسال اطلاعیه</h3></div></div><form id="announceForm" class="form-grid"><input name="title" placeholder="عنوان اطلاعیه" required><textarea name="body" placeholder="متن پیام..." required></textarea><select name="target"><option value="group">فقط گروه</option><option value="private">کاربران خصوصیِ فعال‌کرده اعلان</option><option value="both">گروه + کاربران خصوصی</option><option value="user">یک کاربر مشخص</option></select><input name="telegram_id" placeholder="شناسه عددی کاربر (برای ارسال تکی)"/><button class="primary">ارسال اطلاعیه</button></form><div id="announceResult" class="result-box hidden"></div><h4 class="subheading">آرشیو اطلاعیه‌ها</h4><div id="announceList" class="cards-list"></div></div></section>
+  <section id="page-users" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">USER DIRECTORY</span><h3>کاربران ربات</h3></div></div><div id="userList" class="cards-list"></div></div></section>
+  <section id="page-polls" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">COMMUNITY VOTE</span><h3>ساخت نظرسنجی</h3></div></div><form id="pollForm" class="form-grid"><input name="question" placeholder="سؤال نظرسنجی" required><textarea name="options" placeholder="هر گزینه در یک خط" required></textarea><button class="primary">انتشار در گروه</button></form><div id="pollList" class="cards-list"></div></div></section>
+  <section id="page-audit" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">ADMIN ACTIVITY</span><h3>گزارش فعالیت</h3></div></div><div id="auditList" class="cards-list"></div></div></section>
+  <footer class="footer">ساخته‌شده برای تمرکز بیشتر <span>✦</span> StudyBot</footer>
+ </main>
 </div>
-<script src="./app.js"></script>
-</body>
-</html>
+<div id="toast" class="toast"></div><script src="./app.js"></script>
+</body></html>
