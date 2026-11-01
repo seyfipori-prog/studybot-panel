@@ -1,121 +1,33 @@
-(() => {
-  const tg = window.Telegram?.WebApp;
-  tg?.ready();
-  tg?.expand();
-  const API_BASE = window.STUDYBOT_API_BASE || "";
-  const $ = id => document.getElementById(id);
-  const initData = tg?.initData || "";
-  let me = null;
-  function showNotice(message) {
-    $("notice").textContent = message;
-    $("notice").classList.remove("hidden");
-  }
-  function escapeHtml(s="") {
-    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  }
-  async function api(path, options={}) {
-    const response = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      headers: {"content-type":"application/json","X-Telegram-Init-Data":initData,...(options.headers||{})}
-    });
-    const data = await response.json().catch(()=>({}));
-    if (!response.ok) throw new Error(data.error || `HTTP_${response.status}`);
-    return data;
-  }
-  function renderFiles(files) {
-    $("count").textContent = `${files.length} فایل`;
-    if (!files.length) {
-      $("files").innerHTML = '<div class="empty">فایلی پیدا نشد. فایل‌های تأییدشده بعد از ثبت در اینجا نمایش داده می‌شوند.</div>';
-      return;
-    }
-    $("files").innerHTML = files.map(f => `
-      <article class="file">
-        <h3>📄 ${escapeHtml(f.title || f.original_name)}</h3>
-        <div class="meta">
-          ${escapeHtml([f.subject,f.grade,f.chapter].filter(Boolean).join(" · ") || "دسته‌بندی نشده")}<br>
-          ${escapeHtml(f.description || "")}<br>
-          فرمت: ${escapeHtml((f.extension||"").toUpperCase())}
-        </div>
-        <a href="#" data-download="${escapeHtml(f.id)}">باز کردن / دریافت فایل</a>
-      </article>`).join("");
-  }
-  async function loadFiles() {
-    try {
-      const q = $("q").value.trim();
-      const data = await api(`/api/files${q ? `?q=${encodeURIComponent(q)}` : ""}`);
-      renderFiles(data.files || []);
-    } catch(e) {
-      if (e.message === "AUTH_REQUIRED") showNotice("این صفحه باید از داخل Telegram Mini App باز شود؛ اطلاعات ورود معتبر دریافت نشد.");
-      else if (e.message === "GROUP_MEMBERSHIP_REQUIRED") showNotice("برای استفاده از کتابخانه باید عضو گروه مجاز باشید.");
-      else showNotice(`اتصال به سرویس برقرار نشد: ${e.message}. آدرس API را در تنظیمات این صفحه بررسی کنید.`);
-      $("files").innerHTML = '<div class="empty">کتابخانه بارگذاری نشد.</div>';
-    }
-  }
-  async function loadAdmins() {
-    try {
-      const data = await api("/api/admins");
-      $("adminsList").innerHTML = (data.admins||[]).map(a => `
-        <div class="adminrow"><span><b>${escapeHtml(a.role)}</b> · <code>${escapeHtml(a.telegram_id)}</code></span>
-        ${a.role === "ADMIN" ? `<button data-remove="${escapeHtml(a.telegram_id)}">حذف</button>` : ""}</div>`).join("") || "<p>ادمینی ثبت نشده است.</p>";
-    } catch(e) { $("adminsList").textContent = `دریافت ادمین‌ها ناموفق بود: ${e.message}`; }
-  }
-  async function loadAudit() {
-    try {
-      const data = await api("/api/audit");
-      $("auditList").innerHTML = (data.events||[]).map(e => `<div class="auditrow">${escapeHtml(e.created_at)} · ${escapeHtml(e.action)} · ${escapeHtml(e.actor_telegram_id)} · ${escapeHtml(e.target_id)}</div>`).join("");
-    } catch(e) { $("auditList").textContent = `دریافت تاریخچه ناموفق بود: ${e.message}`; }
-  }
-  async function boot() {
-    if (!initData) {
-      showNotice("برای امنیت، این اپ باید از دکمه Open داخل تلگرام باز شود؛ باز کردن مستقیم در مرورگر معمولی ورود را تأیید نمی‌کند.");
-      $("files").innerHTML = '<div class="empty">Telegram Mini App authentication required.</div>';
-      return;
-    }
-    try {
-      const data = await api("/api/me");
-      me = data;
-      $("welcome").textContent = `خوش آمدی ${data.user.first_name || ""} · کتابخانه فایل‌های تأییدشده`;
-      if (data.role === "OWNER") {
-        $("adminPanel").classList.remove("hidden");
-        $("auditPanel").classList.remove("hidden");
-        await Promise.all([loadAdmins(),loadAudit()]);
-      }
-      await loadFiles();
-    } catch(e) {
-      showNotice(e.message === "GROUP_MEMBERSHIP_REQUIRED" ? "برای استفاده از کتابخانه باید عضو گروه مجاز باشید." : `ورود ناموفق بود: ${e.message}`);
-    }
-  }
-  $("files").addEventListener("click", async e => {
-    const link = e.target.closest("[data-download]");
-    if (!link) return;
-    e.preventDefault();
-    try {
-      const response = await fetch(`${API_BASE}/file/${encodeURIComponent(link.dataset.download)}`, {headers:{"X-Telegram-Init-Data":initData}});
-      if (!response.ok) throw new Error(response.status === 403 ? "GROUP_MEMBERSHIP_REQUIRED" : "DOWNLOAD_FAILED");
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = objectUrl;
-      a.download = link.closest(".file").querySelector("h3").textContent.replace(/^📄\\s*/,"") || "study-file";
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(()=>URL.revokeObjectURL(objectUrl), 30000);
-    } catch(err) { showNotice(err.message === "GROUP_MEMBERSHIP_REQUIRED" ? "عضویت در گروه تأیید نشد." : "دریافت فایل انجام نشد. اپ را از داخل تلگرام باز کنید."); }
-  });
-  $("searchBtn").addEventListener("click", loadFiles);
-  $("refresh").addEventListener("click", () => {loadFiles(); if(me?.role==="OWNER"){loadAdmins();loadAudit();}});
-  $("q").addEventListener("keydown", e => {if(e.key==="Enter")loadFiles();});
-  $("addAdminForm").addEventListener("submit", async e => {
-    e.preventDefault();
-    const id = $("adminId").value.trim();
-    try { await api("/api/admins",{method:"POST",body:JSON.stringify({telegram_id:id})}); $("adminId").value=""; await loadAdmins(); showNotice("ادمین اضافه شد. او باید ربات را در گفت‌وگوی خصوصی Start کند تا اعلان دریافت کند."); }
-    catch(err){showNotice(`افزودن ادمین انجام نشد: ${err.message}`);}
-  });
-  $("adminsList").addEventListener("click", async e => {
-    const id = e.target?.dataset?.remove;
-    if(!id) return;
-    if(!confirm(`ادمین ${id} حذف شود؟`)) return;
-    try {await api(`/api/admins/${encodeURIComponent(id)}`,{method:"DELETE"});await loadAdmins();showNotice("دسترسی ادمین حذف شد.");}
-    catch(err){showNotice(`حذف انجام نشد: ${err.message}`);}
-  });
-  boot();
+
+(()=>{const tg=window.Telegram?.WebApp;tg?.ready();tg?.expand();const API=window.STUDYBOT_API_BASE||'',init=tg?.initData||'', $=id=>document.getElementById(id);let admin=false,isOwner=false,timer;
+const pages={home:['نمای کلی','همه چیز برای یک مطالعه منظم، یک‌جا.'],library:['کتابخانه درسی','جزوه‌ها و منابع تأییدشده گروه.'],schedule:['برنامه کلاس‌ها','برنامه هفتگی کلاس‌ها و تغییرات آن.'],exams:['امتحانات','تقویم امتحانات و یادآوری‌های مهم.'],reminders:['یادآورهای من','رویدادهای شخصی فقط برای خودت.'],tasks:['تکالیف','کارهای درسی و مهلت انجام آن‌ها.'],grades:['دفتر نمرات','اطلاعات نمره‌ها فقط در حساب خودت.'],pending:['تأیید فایل‌ها','بررسی فایل‌های ارسال‌شده توسط کاربران.'],announce:['اطلاعیه و پیام','ارسال پیام به گروه و کاربران مجاز.'],users:['کاربران','فهرست کاربران و وضعیت اعلان خصوصی.'],polls:['نظرسنجی','ساخت رأی‌گیری برای گروه.'],audit:['گزارش فعالیت','تاریخچه عملیات مدیریتی.'],admins:['مدیریت ادمین‌ها','افزودن و حذف مدیران با کنترل مالک اصلی.'],'admin-access':['ورود ادمین','بررسی دسترسی مدیریتی با حساب تلگرام.']};
+function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function toast(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(timer);timer=setTimeout(()=>$('toast').classList.remove('show'),3000)}
+async function api(p,o={}){const r=await fetch(API+p,{...o,headers:{'content-type':'application/json','X-Telegram-Init-Data':init,...(o.headers||{})}}),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||`HTTP_${r.status}`);return d}
+const fd=f=>Object.fromEntries(new FormData(f).entries());
+function go(p){if(!pages[p])p='home';document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$('page-'+p)?.classList.add('active');document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active',x.dataset.page===p));$('pageTitle').textContent=pages[p][0];$('pageSub').textContent=pages[p][1];history.replaceState(null,'','#'+p);load(p)}
+async function home(){const n=await api('/api/notifications');$('notifyStatus').textContent=n.enabled?'اعلان‌های خصوصی فعال هستند.':'برای دریافت یادآوری‌ها اعلان را فعال کن.';$('notifyToggle').textContent=n.enabled?'غیرفعال‌سازی اعلان':'فعال‌سازی اعلان';$('notifyToggle').dataset.enabled=n.enabled?'1':'0';const d=await api('/api/dashboard');$('statFiles').textContent=d.stats.files;$('statExams').textContent=d.stats.exams;$('statTasks').textContent=d.stats.tasks;if(admin){$('statPending').textContent=d.stats.pending;$('pendingBadge').textContent=d.stats.pending}const e=await api('/api/exams');$('homeExams').innerHTML=(e.items||[]).slice(0,4).map(x=>`<div class="item-card"><div><h4>${esc(x.title)}</h4><p>${esc(x.exam_date)} ${esc(x.exam_time||'')} · ${esc(x.scope||'')}</p></div><span class="soft-badge">امتحان</span></div>`).join('')||'<div class="empty-state">امتحانی ثبت نشده است.</div>'}
+async function library(){const q=$('searchFiles').value.trim(),d=await api('/api/files'+(q?'?q='+encodeURIComponent(q):''));$('fileCount').textContent=d.files.length+' فایل';$('libraryList').innerHTML=d.files.map(f=>`<div class="item-card"><div><h4>▤ ${esc(f.title||f.original_name)}</h4><p>${esc(f.description||'')}</p><div class="file-meta"><span>${esc(f.subject||'بدون درس')}</span><span>${esc(f.grade||'')}</span><span>${esc((f.extension||'').toUpperCase())}</span></div></div><button class="small-btn" data-download="${f.id}">دریافت فایل</button></div>`).join('')||'<div class="empty-state">فایلی پیدا نشد.</div>'}
+const days=['یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه','شنبه'];
+async function schedule(){const d=await api('/api/schedule');$('scheduleList').innerHTML=d.items.map(x=>`<div class="item-card"><div><h4>${esc(x.subject)} · ${days[x.weekday]||''}</h4><p>${esc(x.start_time)} ${x.end_time?'تا '+esc(x.end_time):''} · ${esc(x.teacher||'')} ${x.room?'· '+esc(x.room):''}</p></div>${admin?`<button class="small-btn danger" data-delete="schedule/${x.id}">حذف</button>`:''}</div>`).join('')||'<div class="empty-state">هنوز برنامه‌ای ثبت نشده است.</div>'}
+async function exams(){const d=await api('/api/exams');$('examList').innerHTML=d.items.map(x=>`<div class="item-card"><div><h4>◷ ${esc(x.title)}</h4><p>${esc(x.exam_date)} ${esc(x.exam_time||'')} · ${esc(x.scope||'')} ${esc(x.description||'')}</p></div>${admin?`<button class="small-btn danger" data-delete="exams/${x.id}">حذف</button>`:''}</div>`).join('')||'<div class="empty-state">امتحانی ثبت نشده است.</div>'}
+async function reminders(){const d=await api('/api/reminders');$('reminderList').innerHTML=d.items.map(x=>`<div class="item-card"><div><h4>♧ ${esc(x.title)}</h4><p>${esc(x.remind_at.replace('T',' '))} · ${esc(x.description||'')}</p></div><button class="small-btn danger" data-delete="reminders/${x.id}">حذف</button></div>`).join('')||'<div class="empty-state">یادآوری شخصی نداری.</div>'}
+async function tasks(){const d=await api('/api/tasks');$('taskList').innerHTML=d.items.map(x=>`<div class="item-card"><div><h4>${x.done?'✓':'◻'} ${esc(x.title)}</h4><p>${esc(x.due_at||'بدون مهلت')}</p></div><div class="item-actions"><button class="small-btn" data-task="${x.id}" data-done="${x.done?0:1}">${x.done?'بازگردانی':'انجام شد'}</button><button class="small-btn danger" data-delete="tasks/${x.id}">حذف</button></div></div>`).join('')||'<div class="empty-state">تکلیفی ثبت نشده است.</div>'}
+async function grades(){const d=await api('/api/grades'),a=d.items||[],avg=a.length?a.reduce((s,x)=>s+Number(x.score)/Number(x.out_of||20)*20,0)/a.length:0;$('gradeAverage').textContent='میانگین: '+(a.length?avg.toFixed(2):'—');$('gradeList').innerHTML=a.map(x=>`<div class="item-card"><div><h4>${esc(x.subject)}</h4><p>${esc(x.score)} از ${esc(x.out_of)} · ${esc(x.note||'')}</p></div><button class="small-btn danger" data-delete="grades/${x.id}">حذف</button></div>`).join('')||'<div class="empty-state">هنوز نمره‌ای ثبت نکرده‌ای.</div>'}
+async function pending(){const d=await api('/api/admin/files');$('pendingCount').textContent=d.files.length+' مورد';$('pendingList').innerHTML=d.files.map(f=>`<div class="item-card"><div><h4>▤ ${esc(f.original_name)}</h4><p>فرستنده: ${esc(f.uploader_telegram_id)} · ${esc(f.extension)} · کد ${f.id}</p></div><div class="item-actions"><button class="small-btn" data-review="${f.id}">تأیید</button><button class="small-btn danger" data-reject="${f.id}">رد</button></div></div>`).join('')||'<div class="empty-state">صف بررسی خالی است.</div>'}
+async function announcements(){const d=await api('/api/announcements');$('announceList').innerHTML=d.items.map(x=>`<div class="item-card"><div><h4>${esc(x.title)}</h4><p>${esc(x.body)} · ${esc(x.target)} · ${x.sent_count} موفق / ${x.failed_count} ناموفق</p></div></div>`).join('')||'<div class="empty-state">اطلاعیه‌ای ثبت نشده است.</div>'}
+async function users(){const d=await api('/api/admin/users');$('userList').innerHTML=d.users.map(u=>`<div class="item-card"><div><h4>${esc(u.first_name||'کاربر')} ${u.username?'@'+esc(u.username):''}</h4><p><code>${esc(u.telegram_id)}</code> · اعلان خصوصی: ${u.private_notifications?'فعال':'خاموش'}</p></div><span class="soft-badge">${u.private_chat_started?'Start کرده':'غیرفعال'}</span></div>`).join('')||'<div class="empty-state">کاربری ثبت نشده است.</div>'}
+async function polls(){const d=await api('/api/polls');$('pollList').innerHTML=d.items.map(p=>`<div class="item-card"><div><h4>${esc(p.question)}</h4><p>${esc(JSON.parse(p.options_json||'[]').join(' · '))}</p></div><span class="soft-badge">#${p.id}</span></div>`).join('')||'<div class="empty-state">نظرسنجی فعالی نیست.</div>'}
+async function audit(){const d=await api('/api/audit');$('auditList').innerHTML=d.events.map(x=>`<div class="item-card"><div><h4>${esc(x.action)}</h4><p>${esc(x.created_at)} · ${esc(x.actor_telegram_id)} · ${esc(x.target_id||'')}</p></div></div>`).join('')||'<div class="empty-state">گزارشی ثبت نشده است.</div>'}
+async function admins(){if(!isOwner)return;const d=await api('/api/admins');$('adminList').innerHTML=(d.admins||[]).map(a=>`<div class="item-card"><div><h4>${a.role==='OWNER'?'👑 مالک اصلی':'♟ @'+esc(a.username||'بدون‌نام')}</h4><p><code>${esc(a.telegram_id)}</code> · ${esc(a.created_at||'')}</p></div>${a.role==='ADMIN'?`<button class="small-btn danger" data-remove-admin="${esc(a.telegram_id)}">حذف دسترسی</button>`:'<span class="soft-badge">غیرقابل حذف</span>'}</div>`).join('')||'<div class="empty-state">ادمینی ثبت نشده است.</div>'}
+function adminAccess(){const box=$('adminAccessStatus');box.textContent=admin?(isOwner?'دسترسی مالک اصلی تأیید شد.':'دسترسی ادمین تأیید شد.'):'این حساب دسترسی ادمین ندارد. پنل کاربری برای شما فعال است.';box.classList.toggle('notice',!admin);box.classList.toggle('result-box',admin);$('adminOpen').classList.toggle('hidden',!admin)}
+async function load(p){try{await ({home,library,schedule,exams,reminders,tasks,grades,pending,announce:announcements,users,polls,audit,admins, 'admin-access':adminAccess})[p]?.()}catch(e){toast('خطا: '+e.message)}}
+function form(f,path,after){f.addEventListener('submit',async e=>{e.preventDefault();try{const d=fd(f);if(f.id==='pollForm')d.options=d.options.split('\n').map(x=>x.trim()).filter(Boolean);await api(path,{method:'POST',body:JSON.stringify(d)});f.reset();toast('ثبت شد.');after?.()}catch(err){toast('خطا: '+err.message)}})}
+document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>go(b.dataset.page));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));$('refresh').onclick=()=>load(document.querySelector('.page.active')?.id.replace('page-','')||'home');$('searchBtn').onclick=library;$('searchFiles').onkeydown=e=>{if(e.key==='Enter')library()};
+$('notifyToggle').onclick=async()=>{try{const enabled=$('notifyToggle').dataset.enabled!=='1';await api('/api/notifications',{method:'POST',body:JSON.stringify({enabled})});toast(enabled?'اعلان فعال شد.':'اعلان خاموش شد.');home()}catch(e){toast(e.message==='PRIVATE_START_REQUIRED'?'اول در گفت‌وگوی خصوصی ربات /start بزن.':e.message)}};
+form($('scheduleForm'),'/api/schedule',schedule);form($('examForm'),'/api/exams',exams);form($('reminderForm'),'/api/reminders',reminders);form($('taskForm'),'/api/tasks',tasks);form($('gradeForm'),'/api/grades',grades);form($('announceForm'),'/api/admin/announce',async()=>{await announcements();$('announceResult').classList.remove('hidden');$('announceResult').textContent='درخواست ارسال ثبت شد؛ آمار ارسال در آرشیو نمایش داده می‌شود.'});form($('pollForm'),'/api/admin/polls',polls);
+$('adminForm').addEventListener('submit',async e=>{e.preventDefault();const username=new FormData(e.currentTarget).get('username');try{const r=await api('/api/admins',{method:'POST',body:JSON.stringify({username})});e.currentTarget.reset();toast('ادمین @'+r.username+' اضافه شد.');admins()}catch(err){const msgs={USER_NOT_FOUND_OR_NOT_STARTED:'این username هنوز در ربات شناسایی نشده؛ ابتدا باید /start بزند.',ALREADY_ADMIN:'این کاربر از قبل ادمین است.',INVALID_USERNAME:'نام کاربری معتبر نیست.'};toast(msgs[err.message]||err.message)}});
+$('adminOpen').onclick=()=>go('home');
+document.body.addEventListener('click',async e=>{const rem=e.target.closest('[data-remove-admin]');if(rem){if(!confirm('دسترسی این ادمین حذف شود؟'))return;try{await api('/api/admins/'+encodeURIComponent(rem.dataset.removeAdmin),{method:'DELETE'});toast('دسترسی ادمین حذف شد.');admins()}catch(x){toast(x.message)}return}const del=e.target.closest('[data-delete]');if(del){try{await api('/api/'+del.dataset.delete,{method:'DELETE'});toast('حذف شد.');load(document.querySelector('.page.active')?.id.replace('page-',''))}catch(x){toast(x.message)}return}const t=e.target.closest('[data-task]');if(t){await api('/api/tasks/'+t.dataset.task,{method:'PATCH',body:JSON.stringify({done:t.dataset.done==='1'})});tasks();return}const r=e.target.closest('[data-review]');if(r){const title=prompt('عنوان فایل؟');if(title===null)return;const subject=prompt('درس؟')||'',grade=prompt('پایه؟')||'',chapter=prompt('فصل؟')||'',description=prompt('توضیحات؟')||'';try{await api('/api/admin/files/'+r.dataset.review,{method:'POST',body:JSON.stringify({action:'approve',fields:{title,subject,grade,chapter,description}})});toast('فایل تأیید شد.');pending()}catch(x){toast(x.message)}return}const rej=e.target.closest('[data-reject]');if(rej){try{await api('/api/admin/files/'+rej.dataset.reject,{method:'POST',body:JSON.stringify({action:'reject',reason:prompt('دلیل رد؟')||'رد توسط ادمین'})});toast('فایل رد شد.');pending()}catch(x){toast(x.message)}return}const f=e.target.closest('[data-download]');if(f){try{const res=await fetch(API+'/file/'+f.dataset.download,{headers:{'X-Telegram-Init-Data':init}});if(!res.ok)throw Error('دریافت فایل ناموفق بود');const u=URL.createObjectURL(await res.blob()),a=document.createElement('a');a.href=u;a.download='studybot-file';a.click();URL.revokeObjectURL(u)}catch(x){toast(x.message)}}});
+async function boot(){if(!init){$('notice').classList.remove('hidden');$('notice').textContent='برای ورود امن، پنل را از دکمه داخل ربات تلگرام باز کن؛ بازکردن مستقیم در مرورگر ورود معتبر ندارد.';$('splash')?.classList.add('done');return}try{const d=await api('/api/me');admin=['OWNER','ADMIN'].includes(d.role);isOwner=d.role==='OWNER';$('profileName').textContent=d.user.first_name||'دانش‌آموز';$('profileRole').textContent=d.role==='OWNER'?'مالک اصلی':admin?'ادمین':'کاربر StudyBot';$('avatar').textContent=(d.user.first_name||'S').slice(0,1);document.querySelectorAll('.admin-only').forEach(x=>x.classList.toggle('hidden',!admin));document.querySelectorAll('.owner-only').forEach(x=>x.classList.toggle('hidden',!isOwner));$('today').textContent=new Intl.DateTimeFormat('fa-IR',{dateStyle:'medium',timeZone:'Asia/Tehran'}).format(new Date());go(location.hash.slice(1)||'home');setTimeout(()=>$('splash')?.classList.add('done'),650)}catch(e){$('notice').classList.remove('hidden');$('notice').textContent=e.message==='GROUP_MEMBERSHIP_REQUIRED'?'برای استفاده از پنل باید عضو گروه اصلی باشی.':'ورود ناموفق: '+e.message;$('splash')?.classList.add('done')}}
+
 })();
