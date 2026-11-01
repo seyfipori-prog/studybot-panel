@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="./style.css"><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="./config.js"></script>
 </head>
 <body>
+<div id="splash"><div class="splash-core"><div class="splash-mark">⌁</div><h1>Study<span>Bot</span></h1><p>SMART DIGITAL STUDY SPACE</p><div class="splash-loader"></div></div></div>
 <div class="ambient a1"></div><div class="ambient a2"></div>
 <div class="app-shell">
  <aside class="sidebar">
@@ -28,8 +29,10 @@
    <button class="nav-item admin-only hidden" data-page="users"><span>♙</span> کاربران</button>
    <button class="nav-item admin-only hidden" data-page="polls"><span>☷</span> نظرسنجی</button>
    <button class="nav-item admin-only hidden" data-page="audit"><span>⌁</span> گزارش فعالیت</button>
+   <button class="nav-item owner-only hidden" data-page="admins"><span>♛</span> مدیریت ادمین‌ها</button>
+   <button class="nav-item" data-page="admin-access"><span>⚿</span> ورود ادمین</button>
   </nav>
-  <div class="side-foot"><span class="pulse"></span> سرویس آماده دریافت درخواست <small>v4.0 · Asia/Tehran</small></div>
+  <div class="side-foot"><span class="pulse"></span> سرویس آماده دریافت درخواست <small>v5.0 · Asia/Tehran</small></div>
  </aside>
  <main class="main">
   <header class="topbar"><div><div class="eyebrow">STUDY • ORGANIZE • ACHIEVE</div><h1 id="pageTitle">نمای کلی</h1><p id="pageSub">همه چیز برای یک مطالعه منظم، یک‌جا.</p></div><div class="top-actions"><span class="date-chip" id="today"></span><button class="icon-btn" id="refresh" title="به‌روزرسانی">⟳</button></div></header>
@@ -49,6 +52,8 @@
   <section id="page-pending" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">MODERATION QUEUE</span><h3>فایل‌های منتظر تأیید</h3></div><span class="soft-badge" id="pendingCount">۰ مورد</span></div><p class="muted">فایل‌ها تا زمان تأیید در کتابخانه عمومی دیده نمی‌شوند. نسخه اصلی فایل برای ادمین ارسال می‌شود.</p><div id="pendingList" class="cards-list"></div></div></section>
   <section id="page-announce" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">BROADCAST CENTER</span><h3>ارسال اطلاعیه</h3></div></div><form id="announceForm" class="form-grid"><input name="title" placeholder="عنوان اطلاعیه" required><textarea name="body" placeholder="متن پیام..." required></textarea><select name="target"><option value="group">فقط گروه</option><option value="private">کاربران خصوصیِ فعال‌کرده اعلان</option><option value="both">گروه + کاربران خصوصی</option><option value="user">یک کاربر مشخص</option></select><input name="telegram_id" placeholder="شناسه عددی کاربر (برای ارسال تکی)"/><button class="primary">ارسال اطلاعیه</button></form><div id="announceResult" class="result-box hidden"></div><h4 class="subheading">آرشیو اطلاعیه‌ها</h4><div id="announceList" class="cards-list"></div></div></section>
   <section id="page-users" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">USER DIRECTORY</span><h3>کاربران ربات</h3></div></div><div id="userList" class="cards-list"></div></div></section>
+  <section id="page-admins" class="page owner-only hidden"><div class="panel"><div class="panel-head"><div><span class="eyebrow">ACCESS CONTROL</span><h3>مدیریت ادمین‌ها</h3></div><span class="soft-badge">فقط مالک اصلی</span></div><p class="muted">برای افزودن ادمین، نام کاربری تلگرام را وارد کن. فرد باید حداقل یک‌بار ربات را Start کرده یا از طریق پنل شناسایی شده باشد.</p><form id="adminForm" class="form-grid"><h4>افزودن ادمین جدید</h4><input name="username" placeholder="مثلاً @username" autocomplete="off" required><button class="primary" type="submit">افزودن ادمین</button></form><h4 class="subheading">فهرست ادمین‌ها</h4><div id="adminList" class="cards-list"></div></div></section>
+  <section id="page-admin-access" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">ADMIN ACCESS</span><h3>ورود ادمین</h3></div></div><div id="adminAccessStatus" class="notice">در حال بررسی سطح دسترسی تلگرام...</div><p class="muted">ورود ادمین با حساب تلگرام و شناسه امن آن بررسی می‌شود. رمز عبور جداگانه‌ای در پنل ذخیره نمی‌شود.</p><button id="adminOpen" class="primary hidden" type="button">رفتن به مدیریت</button></div></section>
   <section id="page-polls" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">COMMUNITY VOTE</span><h3>ساخت نظرسنجی</h3></div></div><form id="pollForm" class="form-grid"><input name="question" placeholder="سؤال نظرسنجی" required><textarea name="options" placeholder="هر گزینه در یک خط" required></textarea><button class="primary">انتشار در گروه</button></form><div id="pollList" class="cards-list"></div></div></section>
   <section id="page-audit" class="page"><div class="panel"><div class="panel-head"><div><span class="eyebrow">ADMIN ACTIVITY</span><h3>گزارش فعالیت</h3></div></div><div id="auditList" class="cards-list"></div></div></section>
   <footer class="footer">ساخته‌شده برای تمرکز بیشتر <span>✦</span> StudyBot</footer>
